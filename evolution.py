@@ -1,5 +1,8 @@
 import random
 
+# global variables
+energy_p_flora = 50
+
 
 class Board:
     def __init__(self, size=100, start_flora=0):
@@ -35,8 +38,34 @@ class Board:
 
 
 class Creature:
-    def __init__(self):
+    def __init__(self, ecosystem, x, y, move_cost):
         self.energy = 100
+        self.move_cost = move_cost
+        self.ecosystem = ecosystem
+        # initial location
+        self.location = (x, y)
+        self.ecosystem.board[x][y] = self
+        self.ecosystem.free_squares.remove((x, y))
+        self.ecosystem.creature_count += 1
+        self.ecosystem.creature_list.append(self)
 
     def is_alive(self):
-        return True
+        return self.energy > 0
+
+    def eat_flora(self, x, y):
+        if self.ecosystem.board[x][y] != 'F':
+            raise Exception(f"Location ({x},{y}) does not contain Flora")
+        self.ecosystem.remove_flora(x, y)
+        self.energy = min(self.energy + energy_p_flora, 100)
+
+    def move(self, x, y):
+        if (x, y) not in self.ecosystem.free_squares:
+            raise Exception(f"Location ({x},{y}) is not available")
+        else:
+            oldx, oldy = self.location
+            self.location = (x, y)
+            self.ecosystem.board[oldx][oldy] = None
+            self.ecosystem.board[x][y] = self
+            self.ecosystem.free_squares.add((oldx, oldy))
+            self.ecosystem.free_squares.remove((x, y))
+            self.energy -= self.move_cost
