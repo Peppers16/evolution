@@ -85,6 +85,7 @@ def test_move():
 
 
 def test_eat_flora():
+    random.seed(1)
     t_board = Board(3, start_flora=8)
     x, y = t_board.free_squares[0]
     t_creature = Creature(t_board, x, y, move_cost=2)
@@ -96,3 +97,23 @@ def test_eat_flora():
     assert t_creature.location == (1, 1)
 
 
+def test_available_adjacent():
+    t_board = Board(3)
+    t_creature = Creature(t_board, 0, 0, move_cost=2)
+    Creature(t_board, 0, 1, move_cost=2)
+    avail_adj = t_creature.available_adjacent()
+    assert sorted(avail_adj) == [(1, 0), (1, 1)]
+
+
+def test_reproduce():
+    random.seed(1)
+    t_board = Board(3)
+    t_creature = Creature(t_board, 1, 1, move_cost=5)
+    assert t_board.creature_count == 1
+    assert len(t_board.free_squares) == 8
+    offspring = t_creature.reproduce()
+    assert t_board.creature_count == 2
+    assert len(t_board.free_squares) == 7
+    assert are_adjacent(t_creature.location, offspring.location)
+    assert t_creature.move_cost - offspring.move_cost > 0.00001
+    assert t_creature.move_cost - offspring.move_cost < 2

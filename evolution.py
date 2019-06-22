@@ -1,7 +1,10 @@
 import random
+from itertools import compress
 
 # global variables
 energy_p_flora = 50
+mutation_sigma = 0.1
+max_attribute = 10
 
 
 def are_adjacent(loc1, loc2):
@@ -13,6 +16,12 @@ def are_adjacent(loc1, loc2):
     if y1 == y2 and abs(x1 - x2) == 1:
         return True
     return abs(x1 - x2) == 1 and abs(y1 - y2) == 1
+
+
+def mutation_function(attribute):
+    return max(1,
+               min(max_attribute,
+                   random.gauss(attribute, mutation_sigma)))
 
 
 class Board:
@@ -33,7 +42,7 @@ class Board:
     def spawn_flora(self, n_flora):
         """n_flora will be added to the board randomly, subject to free squares being available"""
         for i in range(n_flora):
-            if len(self.free_squares):  # if set is non-empty
+            if len(self.free_squares):  # if list is non-empty
                 x, y = random.choice(self.free_squares)
                 self.board[x][y] = 'F'
                 self.flora_count += 1
@@ -93,3 +102,21 @@ class Creature:
             self.ecosystem.free_squares.append((oldx, oldy))
             self.ecosystem.free_squares.remove((x, y))
             self.energy -= self.move_cost
+
+    def available_adjacent(self):
+        """returns list of available spaces adjacent to self"""
+        available_adjacent = [loc for loc in self.ecosystem.free_squares if are_adjacent(loc, self.location)]
+        return available_adjacent
+
+    def reproduce(self):
+        # can only reproduce if a space is available adjacent to creature
+        available_adjacent = self.available_adjacent()
+        if available_adjacent:
+            birth_x, birth_y = random.choice(list(available_adjacent))
+            # new creature has same traits as parents, with chance of mutation
+            return Creature(
+                ecosystem=self.ecosystem
+                , x=birth_x
+                , y=birth_y
+                , move_cost=mutation_function(self.move_cost)
+            )
